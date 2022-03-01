@@ -58,6 +58,12 @@ LL <- function(data, K, parameters){
   moyenne <- parameters$moyenne
   covariance <- parameters$covariance
   
+  print("PK")
+  print(pk)
+  print("moyenne:")
+  print(moyenne)
+  print("variance: ")
+  print(covariance)
   # Calculate log-likelihood for mixture model
   LL <- mysum(log(apply(sapply(lapply(1:K, 
                                     function(i) pk[i] * dmvnorm(data, moyenne[i,], 
