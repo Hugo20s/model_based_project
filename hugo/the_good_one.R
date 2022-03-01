@@ -36,7 +36,7 @@ etape_M <- function(data, K, tk, parameters){
   
   for(k in 1:K) {
     moyenne[k,] <- (1/mysum(tk[, k]))*colSums(apply(data,2, function(x) x*tk[, k])  )
-    temp <- replace(tk[, k], tk[, k]==0, 10^-8)
+    #temp <- replace(tk[, k], tk[, k]==0, 10^-8)
     #covariance[,,k] = cov.wt(data, wt = temp , method = "ML")$cov
   }
   covariance_aux <- lapply(1:K, function(j) matrix(

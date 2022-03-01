@@ -43,7 +43,7 @@ etape_E <- function(data, K, parameters){
     tk[, k] <- pk[k]*dmvnorm(data, moyenne[k,], variance[,,k])
   }
   tk <- tk/apply(tk, 1, mysum)
-
+  
   return (tk)
 }
 
@@ -65,13 +65,13 @@ etape_M <- function(data, K, tk, parameters){
       ), 1, mysum
     ), f, f)/mysum(tk[,j]))
   variance <- array(unlist(covariance_aux), dim=c(f,f,K))
-
+  
   return (list(pk=pk, moyenne=moyenne, variance=variance))
 }
-  
+
 
 clustering <- function(data, K, epislon){
-  
+  set_inf <- FALSE
   #--------initialize variables
   n <- nrow(data); p <- ncol(data)
   if (FALSE){
@@ -88,10 +88,10 @@ clustering <- function(data, K, epislon){
       n_sample <- 0.7*n
       print(data[sample(1:n, n_sample),])
       variance[,,k] <- cov(data[sample(1:n, n_sample),])
-  }
+    }
     parameters <- list(pk=pk, moyenne=moyenne, variance=variance)
   }
-
+  
   parameters <- init_random(data, K)
   # #initialize variables
   # km.res <- kmeans(data, K)
@@ -102,34 +102,22 @@ clustering <- function(data, K, epislon){
   # for (i in seq(K)){
   #   variance[,,i] <- cov(data[which(as.matrix(km.res$cluster) == i),])
   # }
-  for (k in 1:K){
-    print("det")
-    print(det(parameters$variance[,,k]))
-  }
-  
-  print("-------LOOP------")
+
   #Loop 
   i <- 2
   log_likelihood <- numeric(0)
   log_likelihood[1] <- -Inf
   
- 
-   while (i > 0) {
-    print(paste("ETAPE E", i))
+  
+  while (i > 0) {
     tk <- etape_E(data, K, parameters)
-    print("tk")
-    print(tk)
-    print("col sum tk")
-    print(colSums(tk))
     
     for (k in 1:K ){
       if (sum(tk[,k]) == 0){
-        print("tk merde")
-        return(0)
+        return("a")
       }
     }
     
-    print(paste("ETAPE M", i))
     parameters <- etape_M(data, K, tk, parameters)
     
     pk <- parameters$pk
@@ -137,47 +125,32 @@ clustering <- function(data, K, epislon){
     variance <- parameters$variance
     
     for (k in 1:K){
-      print("det")
       if (det(variance[,,k]) < 10^-5){
-        print("cvariance")
         return(0)
       }
     }
     
-    
-    
-    print("PK")
-    print(pk)
-    print("moyenne:")
-    print(moyenne)
-    print("variance: ")
-    print(variance)
-
-    print(paste("ETAPE LOGLIKELIHOOD", i))
-
+  
     LL <- sum(log(apply(sapply(lapply(1:K, 
-                                        function(k) pk[k] * dmvnorm(data, moyenne[k,], 
-                                                                    variance[,,k])), cbind), 1, sum)))
-
+                                      function(k) pk[k] * dmvnorm(data, moyenne[k,], 
+                                                                  variance[,,k])), cbind), 1, sum)))
+    
     log_likelihood[i] <- LL
-    print("log_likelihood")
-    print(log_likelihood[i])
     
     if (abs(log_likelihood[i] - log_likelihood[i-1]) < epislon){
       y_pred <- apply(tk, 1, which.max)
+      if (set_inf){
+        print("KO")
+      }
       return(list(log_likelihood = log_likelihood[-1], y_pred = y_pred))
     }
     
     if (log_likelihood[i] < log_likelihood[i-1]){
-      print("KO")
-      print(log_likelihood[i])
-      print(log_likelihood[i-1])
-      y_pred <- apply(tk, 1, which.max)
-      return(list(log_likelihood = log_likelihood[-1], y_pred = y_pred))
+      set_inf <- TRUE
     }
     i <- i + 1
   }
-
+  
 }
 
 
@@ -187,12 +160,11 @@ data <- iris[-sample(1:150, 50), -5]
 epislon <- 10^-6
 data <- as.matrix(data)
 
-res <- clustering(data, K, epislon)
-
-if (typeof(res) == "list") {
-  plot(res$log_likelihood)  
+c <- 0
+for (i in 1:20){
+  res <- clustering(data, K, epislon)
+  print(typeof(res))
+  if (typeof(res) == "list"){ 
+    print(res$log_likelihood[length(res$log_likelihood)])
+    }
 }
-
-#plot(res$y_pred)
-#tkres<- replicate(5, clustering(data, K, epislon)) 
-#mean((res - data$pred)^2)

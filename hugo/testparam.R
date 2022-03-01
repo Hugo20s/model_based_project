@@ -55,18 +55,12 @@ for (k in 1:K){
 
 #TEST LIKELIHOOD
 
-LL <- function(data, K, parameters){
-  pk <- parameters$pk
-  moyenne <- parameters$moyenne
-  covariance <- parameters$covariance
-  
-  # Calculate log-likelihood for mixture model
-  LL <- sum(log(apply(sapply(lapply(1:K, 
+
+# Calculate log-likelihood for mixture model
+LL <- sum(log(apply(sapply(lapply(1:K, 
                                     function(i) pk[i] * dmvnorm(data, moyenne[i,], 
                                                                 covariance[,,i])), cbind), 1, sum)))
-  return(LL)
-  
-}
+
 
 pk <- c(0.4, 0.3, 0.3)
 res <- matrix(0, 3, 3)
