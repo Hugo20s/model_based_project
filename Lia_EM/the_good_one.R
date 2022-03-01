@@ -98,6 +98,7 @@ main <- function(data, K, epislon){
   log_likelihood[1] <- 0
   while (i > 0){
     
+    print("Etape E")
     tk <- etape_E(data, K, parameters)
     parameters <- etape_M(data, K, tk, parameters)
 
@@ -113,6 +114,7 @@ main <- function(data, K, epislon){
   return(list(log_likelihood = log_likelihood[-1], y_pred = y_pred))
   
 }
+
 
 #set.seed(3)
 K <- 3
