@@ -36,16 +36,18 @@ etape_M <- function(data, K, tk, parameters){
   
   for(k in 1:K) {
     moyenne[k,] <- (1/mysum(tk[, k]))*colSums(apply(data,2, function(x) x*tk[, k])  )
+    temp <- replace(tk[, k], tk[, k]==0, 10^-8)
+    #covariance[,,k] = cov.wt(data, wt = temp , method = "ML")$cov
   }
   covariance_aux <- lapply(1:K, function(j) matrix(
     apply(
       sapply(1:N, function(i) {
         temp <- replace(tk[i, j], tk[i, j]==0, 10^-8)
-        temp * (data[i, ] - moyenne[[j]]) %*% 
+        temp * (data[i, ] - moyenne[[j]]) %*%
           t(data[i, ] - moyenne[[j]])}
       ), 1, mysum
     ), P, P)/mysum(tk[,j]))
-  
+
   covariance <- array(unlist(covariance_aux), dim=c(P,P,K))
   
   return (list(pk=pk, moyenne=moyenne, covariance=covariance))
@@ -57,9 +59,9 @@ LL <- function(data, K, parameters){
   covariance <- parameters$covariance
   
   # Calculate log-likelihood for mixture model
-  LL <- sum(log(apply(sapply(lapply(1:K, 
+  LL <- mysum(log(apply(sapply(lapply(1:K, 
                                     function(i) pk[i] * dmvnorm(data, moyenne[i,], 
-                                                                covariance[,,i])), cbind), 1, sum)))
+                                                                covariance[,,i])), cbind), 1, mysum)))
   return(LL)
   
 }
@@ -97,16 +99,13 @@ main <- function(data, K, epislon){
   log_likelihood <- numeric(0)
   log_likelihood[1] <- 0
   while (i > 0){
-    
-    print("Etape E")
     tk <- etape_E(data, K, parameters)
     parameters <- etape_M(data, K, tk, parameters)
-
+  
     LL <- LL(data, K, parameters)
     log_likelihood <- c(log_likelihood, LL)
-
-        if (abs(log_likelihood[i] - log_likelihood[i-1]) < epislon){
-      break
+    if (abs(log_likelihood[i] - log_likelihood[i-1]) < epislon){
+        break
     }
     i <- i + 1
   }
@@ -121,19 +120,17 @@ K <- 3
 data <- iris[-sample(1:150, 50), -5]
 y <- iris[-sample(1:150, 50), 5]
 epislon <- 10^-6
-res <- clustering(data, K, epislon)
+res <- main(data, K, epislon)
 plot(res$log_likelihood)
 plot(res$y_pred)
-tkres<- replicate(20, clustering(data, K, epislon)) 
+tkres<- replicate(20, main(data, K, epislon)) 
 
-res <- do.call(rbind, tkres[1,])
-best_iteration <- which.max(res[,ncol(res)])
+result <- do.call(rbind, tkres[1,])
+best_iteration <- which.max(result[,ncol(result)])
 
 y_pred <- tkres[2, best_iteration]$y_pred
 
 plot(1:length(as.list(y_pred)), y_pred)
-#Accuracy(y_pred, y)
-
 
 l <- res$log_likelihood
 for (i in seq(length(l)-1)){
