@@ -136,8 +136,16 @@ clustering <- function(data, K, epislon){
     moyenne <- parameters$moyenne
     variance <- parameters$variance
     
+    print("PK")
+    print(pk)
+    print("moyenne:")
+    print(moyenne)
+    print("variance: ")
+    print(variance)
+    
     for (k in 1:K){
       print("det")
+      print(det(variance[,,k]))
       if (det(variance[,,k]) < 10^-5){
         print("cvariance")
         return(0)
@@ -193,6 +201,6 @@ if (typeof(res) == "list") {
   plot(res$log_likelihood)  
 }
 
-#plot(res$y_pred)
+plot(res$y_pred)
 #tkres<- replicate(5, clustering(data, K, epislon)) 
 #mean((res - data$pred)^2)

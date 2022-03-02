@@ -89,3 +89,59 @@ qr.solve(a)
 #   print(paste("det", k))
 #   print(det(variance[,,k]))
 # }
+
+
+# 
+# if (FALSE){
+#   pk <- c(0.2, 0.5, 0.3)
+#   moyenne <- matrix(0, ncol=ncol(data), nrow = K)
+#   variance <- array(0, dim=c(ncol(data),ncol(data),K))
+#   for (k in 1:K) {
+#     rand_1 <- runif(1, min(data[,1]), max(data[,1]))
+#     rand_2 <- runif(1, min(data[,2]), max(data[,3]))
+#     rand_3 <-   runif(1, min(data[,3]), max(data[,3]))
+#     rand_4 <- runif(1, min(data[,4]), max(data[,4]))
+#     moyenne[k,] <- c(rand_1, rand_2, rand_3, rand_4)
+#     
+#     n_sample <- 0.7*n
+#     print(data[sample(1:n, n_sample),])
+#     variance[,,k] <- cov(data[sample(1:n, n_sample),])
+#   }
+#   parameters <- list(pk=pk, moyenne=moyenne, variance=variance)
+# }
+
+# 
+# etape_M <- function(data, K, tk, parameters){
+#   pk <- parameters$pk
+#   moyenne <- parameters$moyenne
+#   variance <- parameters$variance
+#   N <- nrow(data)
+#   f <- ncol(data)
+#   nk <- colSums(tk)
+#   pk <- nk/N
+#   moyenne <- t(t(data) %*% tk) / nk #dimension(k,f)
+#   covariance_aux <- lapply(1:K, function(j) matrix(
+#     apply(
+#       sapply(1:N, function(i) {
+#         temp <- replace(tk[i, j], tk[i, j]==0, 10^-8)
+#         temp * (data[i, ] - moyenne[[j]]) %*%
+#           t(data[i, ] - moyenne[[j]])}
+#       ), 1, mysum
+#     ), f, f)/mysum(tk[,j]))
+#   variance <- array(unlist(covariance_aux), dim=c(f,f,K))
+#   
+#   return (list(pk=pk, moyenne=moyenne, variance=variance))
+# }
+
+
+
+a <- cbind(c(2,2,2),
+           c(3,3,3),
+           c(4,4,4))
+
+
+b <- cbind(c(1,2,3),
+           c(1,2,3),
+           c(1,2,3))
+
+a[1,] - b[1, ]
