@@ -49,6 +49,25 @@ init_kmeans <- function (data, K) {
 }
 
 
+
+fun_variance_pkg <- function(data, tk, nk, K, N, f, moyenne){
+  variance <- array(0, c(f, f, K))
+  for(k in 1:K) {
+    temp <- replace()
+    variance[,,k] = cov.wt(data, wt = tk[,k] , cor = TRUE, method = "ML")$cov
+  }
+  return(variance)
+}
+
+fun_moyenne_vec <- function(data, tk, nk, K, N,  f){
+  moyenne <- matrix(0, K, f)
+  for(k in 1:K) {
+    moyenne[k,] <- (1/sum(tk[,k])) * colSums(apply(data,2, function(x) x*tk[, k])  )
+  }
+  return(moyenne)
+}
+
+
 etape_E <- function(data, K, parameters){ 
   pk <- parameters$pk
   moyenne <- parameters$moyenne
@@ -59,6 +78,15 @@ etape_E <- function(data, K, parameters){
     tk[, k] <- pk[k]* emdbook::dmvnorm(data, moyenne[k,], variance[,,k])
   }
   tk <- tk/apply(tk, 1, sum)
+  
+  for (k in 1:K){
+    if (sum(tk[,k]) == 0){
+      print(sum(tk[,k]))
+      print(variance)
+      print(moyenne)
+      
+    }
+  }
   
   return (tk)
 }
@@ -96,56 +124,45 @@ clustering <- function(data, K, epsilon, type_init = "kmeans", parameters = 0){
   
   while (i > 0) {
     tk <- etape_E(data, K, parameters)
-    # 
-    # for (k in 1:K ){
-    #   if (sum(tk[,k]) == 0){
-    #     return("a")
-    #   }
-    # }
     
     parameters <- etape_M(data, K, tk)
-    
     pk <- parameters$pk
     moyenne <- parameters$moyenne
     variance <- parameters$variance
-    
-    # for (k in 1:K){
-    #   if (det(variance[,,k]) < 10^-100){
-    #     print(det(variance[,,k]))
-    #     return(0)
-    #   }
-    # }
 
     LL <- sum(log(apply(sapply(lapply(1:K, 
                                       function(k) pk[k] * emdbook::dmvnorm(data, moyenne[k,], 
                                                                   variance[,,k])), cbind), 1, sum)))
-    #LL <- fun_ll_all(data, moyennne, variance, pk, n)
     
     log_likelihood[i] <- LL
+    
+    if (LL < log_likelihood[i-1]){
+      set_inf <- TRUE
+      print("------ debug KO")
+      print("tk")
+      print(tk)
+      print("sum tk")
+      print(colSums(tk))
+      print("pk")
+      print(pk)
+      print("moyenne")
+      print(moyenne)
+      print("variance")
+      print(variance)
+    }
     
     if (abs(log_likelihood[i] - log_likelihood[i-1]) < epsilon){
       y_pred <- apply(tk, 1, which.max)
       if (set_inf){
-        # print(variance)
-        # print(moyenne)
-        # print(pk)
-        print("KO")
-        print(log_likelihood[-2])
-        print(abs(log_likelihood[i] - log_likelihood[i-1]))
+        print("___________________________________________________________KO")
+        plot(loglikelihood)
       }
       print(i)
       print(abs(log_likelihood[i] - log_likelihood[i-1]))
       return(list(log_likelihood = log_likelihood[-1], y_pred = y_pred))
     }
     
-    if (LL < log_likelihood[i-1]){
-      set_inf <- TRUE
-      #print(paste("pb", i))
-    }
-    
-    
     if ((type_init == "small") && (i == 5)) {
-      print("init fini")
       return( clustering(data, K, epsilon, "", parameters ) )
     }
     
