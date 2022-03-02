@@ -48,12 +48,24 @@ init_kmeans <- function (data, K) {
   return (list(pk=pk, moyenne=moyenne, variance=variance))
 }
 
+fun_var <- function(data, f, K, moyenne){
+  N <- nrow(data)
+  variance <- array(0, c(f,f,K))
+  for (k in 1:K){
+    sig <- matrix(0, f, f)
+    for (i in 1:N) {
+      
+      sig <- sig + (data[i,] - moyenne[k,]) %*% t(data[i,] - moyenne[k,])
+    }
+    variance[,,k] <- sig / N
+  }
+  return(variance)
+}
 
 
 fun_variance_pkg <- function(data, tk, nk, K, N, f, moyenne){
   variance <- array(0, c(f, f, K))
   for(k in 1:K) {
-    temp <- replace()
     variance[,,k] = cov.wt(data, wt = tk[,k] , cor = TRUE, method = "ML")$cov
   }
   return(variance)
@@ -155,10 +167,8 @@ clustering <- function(data, K, epsilon, type_init = "kmeans", parameters = 0){
       y_pred <- apply(tk, 1, which.max)
       if (set_inf){
         print("___________________________________________________________KO")
-        plot(loglikelihood)
+        plot(log_likelihood)
       }
-      print(i)
-      print(abs(log_likelihood[i] - log_likelihood[i-1]))
       return(list(log_likelihood = log_likelihood[-1], y_pred = y_pred))
     }
     
@@ -191,7 +201,6 @@ plot(res$y_pred)
 c <- 0
 for (i in 1:100){
   res <- clustering(data, K, epsilon, "small")
-  print(typeof(res))
   if (typeof(res) == "list"){ 
     print(res$log_likelihood[length(res$log_likelihood)])
   }
@@ -199,3 +208,6 @@ for (i in 1:100){
 }
 
 table(res$y_pred, y)
+
+vec <- c(1,2,3)
+vec[-1]
