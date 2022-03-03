@@ -2,7 +2,7 @@
 
 library("MLmetrics")
 
-MixtureMixture.train <- function(X_train, y_train, epislon){
+MixtureMixture.train <- function(X_train, y_train, number_clusters, n_interaction, epislon){
 
   classes <- unique(y_train)
   best_models <- list()
@@ -18,24 +18,37 @@ MixtureMixture.train <- function(X_train, y_train, epislon){
     results <- list()
     i <- 1
     
-    #LOG-LIKE KO
-    #sometime it doesn't converge (log-likelihood smaller then epislon )
-
-    #Error in if (LL < log_likelihood[i - 1]) { : 
-    #missing value where TRUE/FALSE needed missing value where TRUE/FALSE needed
-    
-    number_clusters <- c(1, 2,3,4,5)
     for (k in number_clusters){
-      res <- main(data_part, k, epislon, "small")
-      print("-----Max Log-likelihood-------")
-      print(res$maxll)
-      print("-----Cluster Number------- "); print(k)
-      print("Class "); print(n_class)
-      
-      BIC[i] <- -2*res$maxll + (k*(p*(p + 1)/2 + p + 1) - 1)*log(n)
-      
-      results[[i]] <- res 
-      i <- i + 1
+      list_ll <- numeric()
+      list_res <- list()
+      try <- 1
+      #for (interaction in n_interaction){
+      print("Number of Clusters")
+      print(k)
+      for (interaction in  1:n_interaction){
+        print(interaction)
+        res <- main(data_part, k, epislon, "random") 
+        # ALGO EM   
+        if (res$invalid == FALSE){
+          print(res$maxll)
+          list_ll[try] <- res$maxll
+          list_res[[try]] <- res  
+          try <- try + 1
+        }
+      }
+      if (!(length(list_res) == 0) ){
+        res <- list_res[[which.max(list_ll)]] 
+        print("-----Max Log-likelihood-------")
+        print(res$maxll)
+        print("-----Cluster Number------- "); print(k)
+        print("Class "); print(n_class)
+        
+        BIC[i] <- -2*res$maxll + (k*(p*(p + 1)/2 + p + 1) - 1)*log(n)
+        
+        results[[i]] <- res 
+        i <- i + 1
+        }
+        
     }
     print("----------BIC-----------")
     print(BIC)
@@ -60,7 +73,6 @@ MixtureMixture.predict <- function(X_test, n_classes, n_clusters, best_models){
   k <- 1
   for (n_class in 1:n_classes){
     model<- best_models[[n_class]]
-    print(length(model$pk))
     for (i in 1:length(model$pk)){
       parcial_results[,k] <- model$pk[i]*dmvnorm(as.matrix(X_test), model$moyenne[i,] , model$variance[,,i])
     k <- k + 1
@@ -68,56 +80,28 @@ MixtureMixture.predict <- function(X_test, n_classes, n_clusters, best_models){
   }
   parcial_results <- parcial_results/rowSums(parcial_results)
 
-  print(parcial_results)
   y_pred <- n_clusters[apply(parcial_results, 1, which.max)] 
   return(y_pred)
 
 }
 
-
-X_train <- iris[sample(1:150, 100), -5]
-y_train <- iris[sample(1:150, 100), 5]
-y_train <- as.numeric(factor(y_train))
-X_test <- iris[sample(1:150, 50), -5]
-y_test <- iris[sample(1:150, 50), 5]
-y_test <- as.numeric(factor(y_test))
-epislon <- 10^-6
-
-n_classes <- length(unique(y_train))
-
-results <- MixtureMixture.train(X_train, y_train, epislon)
-print(results)
-
-y_pred <- MixtureMixture.predict(X_test, n_classes, results$n_clusters, results$best_models)
-table(y_pred, y_test)
-Accuracy(y_pred, y_test)
-
-# # 
-# # 
-# # plot(res$log_likelihood)  
-# # plot(res$y_pred)
-# # 
-# # c <- 0
-# # for (i in 1:100){
-# #   res <- clustering(data, K, epsilon, "small")
-# #   if (typeof(res) == "list"){ 
-# #     # print(res$log_likelihood[length(res$log_likelihood)])
-# #   }
-# #   # print("-----")
-# # }
-# # 
-# # table(res$y_pred, y)
+# rand<- sample(1:150, 150)
 # 
-# # 
-# res <- main(data, K, epislon)
-# plot(res$log_likelihood)
-# plot(res$y_pred)
-# tkres<- replicate(20, main(data, K, epislon))
+# X_train <- iris[rand[1:100], -5]
+# y_train <- iris[rand[1:100], 5]
+# y_train <- as.numeric(factor(y_train))
+# X_test <- iris[rand[101:150], -5]
+# y_test <- iris[rand[101:150], 5]
+# y_test <- as.numeric(factor(y_test))
+# epislon <- 10^-6
 # 
-# result <- do.call(rbind, tkres[1,])
-# best_iteration <- which.max(result[,ncol(result)])
+# number_clusters <- 1:5
+# n_interaction <- 50
+# results <- MixtureMixture.train(X_train, y_train, number_clusters, n_interaction, epislon)
+# print(results)
 # 
-# y_pred <- tkres[2, best_iteration]$y_pred
+# n_classes <- length(unique(y_train))
+# y_pred <- MixtureMixture.predict(X_test, n_classes, results$n_clusters, results$best_models)
 # 
-# plot(1:length(as.list(y_pred)), y_pred)
-# plot(tkres[1,1]$log_likelihood)
+# mat <- confusionMatrix(data=as.factor(y_pred),reference=as.factor(y_test))
+

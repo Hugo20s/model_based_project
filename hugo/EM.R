@@ -127,16 +127,6 @@ main <- function(data, K, epsilon, type_init = "kmeans", parameters = 0){
     if (LL < log_likelihood[i-1]){
       set_inf <- TRUE
       print("------ debug KO")
-      # print("tk")
-      # print(tk)
-      print("sum tk")
-      print(colSums(tk))
-      print("pk")
-      print(pk)
-      print("moyenne")
-      print(moyenne)
-      print("variance")
-      print(variance)
     }
     
     if (abs(log_likelihood[i] - log_likelihood[i-1]) < epsilon){
@@ -176,7 +166,7 @@ plot(res$y_pred)
 
 
 for (i in 1:10){
-  res <- main(data, K, epsilon, "kmeans")
+  res <- main(data, K, epsilon, "random")
   if (typeof(res) == "list"){ 
     print(res$log_likelihood[length(res$log_likelihood)])
   }
