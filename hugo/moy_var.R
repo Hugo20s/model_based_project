@@ -4,12 +4,13 @@ fun_variance_all <- function(data, tk, nk, K, N, f, moyenne){
     sig <- matrix(0, f, f)
     for (i in 1:N) {
       
-      sig <- sig + t(tk[i,k] * (data[i,] - moyenne[k,])) %*% (data[i,] - moyenne[k,])
+      sig <- sig + tk[i,k] * (data[i,] - moyenne[k,]) %*% t(data[i,] - moyenne[k,])
     }
     variance[,,k] <- sig / nk[k]
   }
   return(variance)
 }
+
 
 fun_var <- function(data, f, K, moyenne){
   N <- nrow(data)
@@ -42,12 +43,10 @@ fun_variance_guy <- function(data, tk, nk, K, N, f, moyenne){
 fun_variance_pkg <- function(data, tk, nk, K, N, f, moyenne){
   variance <- array(0, c(f, f, K))
   for(k in 1:K) {
-    temp <- replace()
     variance[,,k] = cov.wt(data, wt = tk[,k] , cor = TRUE, method = "ML")$cov
   }
   return(variance)
 }
-
 
 
 fun_moyenne_all <- function(data, tk, nk, K, N, f){

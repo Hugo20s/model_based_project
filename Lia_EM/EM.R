@@ -34,7 +34,6 @@ init_kmeans <- function (data, K) {
   
   variance <- array(0, dim=c(ncol(data),ncol(data),K))
   for (i in seq(K)){
-    
     data_cls <- data[which(as.matrix(km.res$cluster) == i),]
     if (length(data_cls) == ncol(data)){
       data_cls <- rbind(data_cls, data_cls+runif(1,-0.1, 0.1))
