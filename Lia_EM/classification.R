@@ -1,5 +1,3 @@
-
-
 library("MLmetrics")
 
 MixtureMixture.train <- function(X_train, y_train, number_clusters, n_interaction, epislon){
@@ -85,20 +83,20 @@ MixtureMixture.predict <- function(X_test, n_classes, n_clusters, best_models){
 
 }
 
-# rand<- sample(1:150, 150)
-# 
-# X_train <- iris[rand[1:100], -5]
-# y_train <- iris[rand[1:100], 5]
-# y_train <- as.numeric(factor(y_train))
-# X_test <- iris[rand[101:150], -5]
-# y_test <- iris[rand[101:150], 5]
-# y_test <- as.numeric(factor(y_test))
-# epislon <- 10^-6
-# 
-# number_clusters <- 1:5
-# n_interaction <- 50
-# results <- MixtureMixture.train(X_train, y_train, number_clusters, n_interaction, epislon)
-# print(results)
+rand<- sample(1:150, 150)
+
+X_train <- iris[rand[1:100], -5]
+y_train <- iris[rand[1:100], 5]
+y_train <- as.numeric(factor(y_train))
+X_test <- iris[rand[101:150], -5]
+y_test <- iris[rand[101:150], 5]
+y_test <- as.numeric(factor(y_test))
+epislon <- 10^-6
+
+number_clusters <- 1:5
+n_interaction <- 50
+results <- MixtureMixture.train(X_train, y_train, number_clusters, n_interaction, epislon)
+print(results)
 # 
 # n_classes <- length(unique(y_train))
 # y_pred <- MixtureMixture.predict(X_test, n_classes, results$n_clusters, results$best_models)

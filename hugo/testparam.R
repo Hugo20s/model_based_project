@@ -1,89 +1,64 @@
 K <- 3
-P <- 2
-N <- 3
+f <- 2
+N <- 4
 #n = 3
 #f = 2
 #k = 3
 
 
-d <- cbind(c(1,2,3), c(4,5,6))    #n;f
-t <- cbind(c(0.1,0.2,0.3), c(0.7,0.7,0.4), c(0.2, 0.1, 0.3))         #n;k
+d <- cbind(c(1,2,3,4), c(4,5,6,7))    #n;f
+t <- cbind(c(0.1,0.2,0.3, 0.6), c(0.7,0.7,0.4, 0.1), c(0.2, 0.1, 0.3, 0.2))         #n;k
 st <- colSums(t) #k
-moyenne <- t(t(d) %*% t) / st #k,f
-
-
-#TEST MOYENNE 
-moyenne <- matrix(0, K, P)
+moyenne <- matrix(0, K, f)
+variance <- array(0, c(f,f, K))
 for(k in 1:K) {
-  moyenne[k,] <- (1/mysum(t[, k]))*colSums(apply(d,2, function(x) x*t[, k])  )
+  moyenne[k,] <- (1/sum(t[,k])) * colSums(apply(d,2, function(x) x*t[, k])  )
+  variance[,,k] <- cov.wt(d, wt = t[,k], method="ML")$cov
 }
 
-moyenne <- t(t(d) %*% t) / st #k,f
-
-
-
-#TEST VARIANCE 
-variance <- array( 0, c(2, 2, K))   # f;f;k
+dens_emd <- list()
+dens_all<- list()
+dens_mv<- list()
 for (k in 1:K) {
-  temp1 <- (d - moyenne[k,])  #n;f    
-  temp2 <- t(t[,k] * temp1) %*% temp1     # t(n;f * n)  %*% n;f
-  variance[,,k] <- temp2 / st[k]
+  dens_emd[[k]] <- emdbook::dmvnorm(d, moyenne[k,], variance[,,k] )  
+  #dens_all[[k]] <- dmultinorm_all(data, moyenne[k,], variance[,,k], f)
+  dens_mv[[k]] <- mvtnorm::dmvnorm(d, moyenne[k,], variance[,,k] )  
 }
 
-covariance_aux <- lapply(1:K, function(j) matrix(
-  apply(
-    sapply(1:N, function(i) 
-      t[i, j] * (d[i, ] - moyenne[j]) %*% 
-        t(d[i, ] - moyenne[j])
-    ), 1, mysum
-  ), P, P)/mysum(t[,j]))
-
-covariance <- array(unlist(covariance_aux), dim=c(P,P,K))
-
-variance <- array( 0, c(2, 2, K)) 
-for (k in 1:K){
-  res <- matrix(0, 2, 2)
-  for (i in 1:N){
-    res <- res + t[i, k] * (d[i, ] - moyenne[k]) %*% t(d[i, ] - moyenne[k])
-  }
-  variance[,,k] <- res / mysum(t[,k])
-}
-
-for (k in 1:K){
-  
-}
-
-#TEST LIKELIHOOD
+M = matrix(c(1,0.5,0.5,0.5,1,0.5,0.5,0.5,1),nrow=3)
+mu <- c(1,2,3)
+x <- matrix(1:6,nrow=2)
+res1 <- emdbook::dmvnorm(x, mu, M)
+res2 <- mvtnorm::dmvnorm(x , mu, M)
+res3 <- dmultinorm_all(x, mu, M)
 
 
-# Calculate log-likelihood for mixture model
-LL <- sum(log(apply(sapply(lapply(1:K, 
-                                    function(i) pk[i] * dmvnorm(data, moyenne[i,], 
-                                                                covariance[,,i])), cbind), 1, sum)))
+apply(M, 1, which.max)
 
 
-pk <- c(0.4, 0.3, 0.3)
-res <- matrix(0, 3, 3)
-for (i in 1:K){
-  res[i,] <- pk[i] * dmvnorm(d, moyenne[i,], variance[,,i])
-}
-res <- rowSums(res)
-res <- log(res)
-ll <- sum(res)
-
-
+log(res3)
 
 i <- 1
-k <- 1
+sweep(x[i,], 2, mu, FUN = '-', check.margin=FALSE)
 
-apply(temp1,2, function(x) x*t[, k])
+(x[i,] - mu) * 2
 
 
-
-###ANCIENNE METHODE
+param_sauv <- parameters
+tk_sauv <- tk 
+list_densite <- list()
+list_densite_all <- list()
 for (k in 1:K){
-  #moyenne[k,] <- (1/sum(tk[, k]))*colSums( apply(data,2, function(x) x*tk[, k])  )
-  moyenne[k,] <- (1/nk)*colSums(tk[, k] * data)
-  wt <- replace(tk[, k], tk[, k]==0, 10^-8) 
-  variance[,,k] = cov.wt(data, wt = wt , method = "ML")$cov
+  list_densite[[k]] <- mvtnorm::dmvnorm(data, moyenne[k,], variance[,,k])
+  #list_densite_all[[k]] <- dmultinorm_all(data, moyenne[k,], variance[,,k], p)
 }
+# for (k in 1:K){
+#   print("emd")
+#   print(emdbook::dmvnorm(data, moyenne[k,], variance[,,k]))
+#   print("all")
+#   #print(dmultinorm_all(data, moyenne[k,], variance[,,k], p))
+#   print("mv")
+#   print(mvtnorm::dmvnorm(data, moyenne[k,], variance[,,k]))
+# }
+i <- i + 1
+#return()
