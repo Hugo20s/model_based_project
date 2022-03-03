@@ -76,13 +76,7 @@ etape_E <- function(data, K, parameters){
     tk[, k] <- pk[k]* mvtnorm::dmvnorm(data, moyenne[k,], variance[,,k])
   }
   tk <- tk/apply(tk, 1, sum)
-  
-  for (k in 1:K){
-    if (sum(tk[,k]) == 0){
-      print("sum à 0")
-    }
-  }
-  
+
   return (tk)
 }
 

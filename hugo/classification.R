@@ -29,12 +29,12 @@ MixtureMixture.train <- function(X_train, y_train, epislon){
     for (k in number_clusters){
       print(paste("cluster", k, "-----------------"))
       
-      list_ll <- list()
+      list_ll <- numeric()
       list_res <- list()
       for (nem in 1:20){
         res <- main(data_part, k, epislon, "small")                  # ALGO EM   
         if (res$invalid == FALSE){
-          list_ll[[nem]] <- res$maxll
+          list_ll[nem] <- res$maxll
           list_res[[nem]] <- res  
         }
         
