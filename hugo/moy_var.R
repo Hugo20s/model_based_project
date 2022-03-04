@@ -85,22 +85,23 @@ dmultinorm_mvt <- function(data, moyenne, variance) {
   return(res)
 }
 
-dmultinorm_all <- function(data, moyenne, variance) {
+dmultinorm_all <- function(data, moyenne, variance, pk) {
   N <- nrow(data)
-  print(N)
   f <- ncol(data)
   coeff <- (1/ ((2*pi)^(f/2) * (det(variance))^0.5))
   variance_inv <- solve.default(variance)
   res <- numeric(N)
   diff <- sweep(data, 2, moyenne, FUN = '-', check.margin=FALSE)
   for (i in 1:N){
-   
     res[i] <- (exp( (-1/2) * (t(diff[i,]) %*% variance_inv %*% diff[i,]))) * coeff
   }
   
   return(res)
 }
   
+dmultinorm_all <- function(data, moyenne, variance){
+  
+}
 
 
 
