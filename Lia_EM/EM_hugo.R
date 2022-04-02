@@ -1,7 +1,32 @@
 # EM algorithm for Gaussian mixture model estimation
-
 library("mvtnorm")
+library("emdbook")
+#install.packages('matrixStats')
+library("matrixStats")
 
+init_0 <- function(data, K){
+  f <- ncol(data)
+  N <- nrow(data)
+  # pk <- runif(K,3/10,7/10)
+  # pk <- pk / sum(pk)
+  # moyenne <- matrix(0, ncol=ncol(data), nrow = K)
+  # for (k in 1:K) {
+  #   for (cf in 1:f){
+  #     rand_1 <- runif(1, min(data[,cf]), max(data[,cf]))
+  #     moyenne[k,cf] <- rand_1
+  #   }
+  # }
+  
+  km.res <- kmeans(data, K)
+  pk <- numeric(K)
+  for (k in 1:K){
+    pk[k] <- length(km.res$cluster[which(km.res$cluster==k)])/N 
+  }
+  
+  moyenne <- as.matrix(km.res$centers)
+  
+} 
+####### INIT
 init_random <- function(data, K){
   f <- ncol(data)
   N <- nrow(data)
@@ -23,7 +48,6 @@ init_random <- function(data, K){
     trans_x_moyenne <- crossprod(x_moyenne)
     variance[,,k] <- trans_x_moyenne/ N
   }
-  
   return (list(pk=pk, moyenne=moyenne, variance=variance))
 }
 
@@ -44,11 +68,35 @@ init_kmeans <- function (data, K) {
   return (list(pk=pk, moyenne=moyenne, variance=variance))
 }
 
+
+#######FONCTION MOYENNE VARIANCE DMVNORM
+fun_variance_all <- function(data, tk, nk, K, N, f, moyenne){
+  variance <- array(0, c(f, f, K))
+  for(k in 1:K) {
+    x_moyenne <- sweep(data, 2, moyenne[k, ], FUN = '-', check.margin=FALSE)
+    ex <- tk[,k]  * x_moyenne
+    trans_x_moyenne <- t(ex) %*% x_moyenne
+    variance[,,k] <- trans_x_moyenne/ nk[k]
+  }
+  
+  return(variance)
+}
+
+fun_moyenne_vec <- function(data, tk, nk, K, N,  f){
+  moyenne <- matrix(0, K, f)
+  for(k in 1:K) {
+    moyenne[k,] <- (1/sum(tk[,k])) * colSums(apply(data,2, function(x) x*tk[, k])  )
+  }
+  return(moyenne)
+}
+
 dmultinorm_all <- function(data, moyenne, variance) {
   N <- nrow(data)
   f <- ncol(data)
   coeff <- (1/ ((2*pi)^(f/2) * (det(variance))^0.5))
-  variance_inv <- solve.default(variance)
+  #variance_inv <-  inv(t(variance))
+  
+  variance_inv <- solve.default(variance, tol = 1e-500)
   res <- numeric(N)
   diff <- sweep(data, 2, moyenne, FUN = '-', check.margin=FALSE)
   for (i in 1:N){
@@ -59,6 +107,7 @@ dmultinorm_all <- function(data, moyenne, variance) {
 }
 
 
+######STEP E 
 etape_E <- function(data, K, parameters){ 
   pk <- parameters$pk
   moyenne <- parameters$moyenne
@@ -72,33 +121,23 @@ etape_E <- function(data, K, parameters){
   
   return (tk)
 }
+######STEP M 
 etape_M <- function(data, K, tk){
   N <- nrow(data)
   f <- ncol(data)
   nk <- colSums(tk)
   
   pk <- nk/N
-  moyenne <- matrix(0, K, f)
-  for(k in 1:K) {
-    moyenne[k,] <- (1/sum(tk[,k])) * colSums(apply(data,2, function(x) x*tk[, k])  )
-  }
+  moyenne  <- fun_moyenne_vec(data, tk,nk,K, N,  f)
+  variance<- fun_variance_all(data, tk, nk, K, N, f, moyenne)
   
-  variance <- array(0, c(f, f, K))
-  for(k in 1:K) {
-    temp <- replace(tk[, k], tk[, k]==0, 10^-8) 
-    x_moyenne <- sweep(data, 2, moyenne[k, ], FUN = '-', check.margin=FALSE)
-    ex <- temp  * x_moyenne
-    trans_x_moyenne <- t(ex) %*% x_moyenne
-    variance[,,k] <- trans_x_moyenne/ nk[k]
-  
-  }
-
   return (list(pk=pk, moyenne=moyenne, variance=variance))
 }
 
 
-main <- function(data, K, epislon, type_init = "kmeans", parameters = 0){
+main <- function(data, K, epsilon, type_init = "kmeans", parameters = 0){
   set_inf <- FALSE
+  an.error.occured <- FALSE
   #--------initialize variables
   n <- nrow(data); p <- ncol(data)
   data <- as.matrix(data)
@@ -108,12 +147,14 @@ main <- function(data, K, epislon, type_init = "kmeans", parameters = 0){
   if ((type_init == "random") || (type_init == "small"))  {
     parameters <- init_random(data, K)  
   }
+  if ((type_init == "init_0") )  {
+    parameters <- init_0(data, K)  
+  }
   #Loop 
   i <- 2
   log_likelihood <- numeric(0)
   log_likelihood[1] <- -Inf
-  
-  
+  print("Entering in loop")
   while( (i > 0) || (i > 100))  {
     #print(i)
     tk <- etape_E(data, K, parameters)
@@ -122,71 +163,81 @@ main <- function(data, K, epislon, type_init = "kmeans", parameters = 0){
     pk <- parameters$pk
     moyenne <- parameters$moyenne
     variance <- parameters$variance
-    
     an.error.occured <- FALSE
-    tryCatch( { LL <- lapply(1:K, function(k) pk[k] * dmultinorm_all(data, moyenne[k,], variance[,,k])) }
-              , error = function(e) {an.error.occured <<- TRUE; set_inf=FALSE ; print("ko")})
+    
+    tryCatch( {
+      LL <- lapply(1:K, function(k) pk[k] * dmultinorm_all(data, moyenne[k,], variance[,,k])) }
+      , error = function(e) {an.error.occured <<- TRUE; print("Determinant equals to null")})
     if (an.error.occured) {
-      return(list(maxll = LLsauv, invalid = set_inf))
+      return(list(maxll = LLsauv, invalid = TRUE))
     }
     LL <- Reduce('+', LL)
     LL <- sum(log(LL))
     
-    #print(LL)
-    if (is.nan(LL)){
-      set_inf <- TRUE
-      print("------ LL KO")
-      return(list(invalid = set_inf))}
-    if (LL < log_likelihood[i-1]){
-      for (k in 1:K){
-        print(det(variance[,,k]))
-      }
-      set_inf <- TRUE
-      print("------ debug KO")
-    }
+    print(LL)
+    if(is.nan(LL)){
+      set_inf=TRUE
+      warning(print("Log-likelihood is null "))
+      return(list(maxll = LLsauv, invalid = set_inf))
+      
+    } 
+    
     
     log_likelihood[i] <- LL
     
+    if(LL < log_likelihood[i-1]){
+      set_inf=TRUE
+      warning(print("Log-likelihood decreases"))
+      return(list(maxll = LLsauv, invalid = set_inf))
+      
+    } 
     
-    if (abs(log_likelihood[i] - log_likelihood[i-1]) < epislon){
+    if (abs(log_likelihood[i] - log_likelihood[i-1]) < epsilon){
       y_pred <- apply(tk, 1, which.max)
-      if (set_inf){
-        print("___________________________________________________________KO")
-        plot(log_likelihood)
-      }
       return(list(log_likelihood = log_likelihood[-1], y_pred = y_pred, maxll = max(log_likelihood[-1]), parameters = parameters, invalid = set_inf))
     }
     
     if ((type_init == "small") && (i == 5)) {
-      return( main(data, K, epislon, "", parameters ) )
+      return( main(data, K, epsilon, "", parameters ) )
     }
     
-    
+    LLsauv <- LL
+
     i <- i + 1
+
   }
   
 }
 
-K <- 5
-split <- sample(1:150, 50)
-y <- iris[-split, 5]
-data <- iris[-split, -5]
-epsilon <- 10^-6
-data <- as.matrix(data)
-# #
-# # res <- main(data, K, epsilon, "small")
+
+# 
+# K <- 5
+# split <- sample(1:150, 100)
+# y <- iris[-split, 5]
+# data <- iris[-split, -5]
+# epsilon <- 10^-6
+# data <- as.matrix(data)
+# 
+# res <- main(data, K, epsilon, "init0")
 # # table(res$y_pred, y)
-# #
-# #
-# # plot(res$log_likelihood)
+# # plot(res$log_likelihood)  
 # # plot(res$y_pred)
-# #
-for (i in 1:100){
-  res <- main(data, 4, epsilon, "random")
-  if (typeof(res) == "list"){
-    print(res$log_likelihood[length(res$log_likelihood)])
-  }
-  print("-----")
-}
-#
-# table(res$y_pred, y)
+# 
+# 
+# data_test <- data[which(y=="setosa"),]
+# 
+# 
+# for (i in 1:100){
+#   res <- main(data, K, epsilon, "random")
+#   if (typeof(res) == "list"){ 
+#     print(res$maxll)
+#     print(length(res$log_likelihood))
+#   }
+#   print("-----")
+# }
+# 
+# 
+
+
+
+

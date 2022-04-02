@@ -10,14 +10,17 @@ library(caret)
 #28x28 pixels
 
 #separar melhor esses dados
-images    <- as.matrix(read.table("minimnist/data.txt"))[1:1000, ]
-labels <- as.matrix(read.table("minimnist/labels.txt", colClasses = 'integer'))[1:1000]
+images    <- as.matrix(read.table("minimnist/data.txt"))
+labels <- as.matrix(read.table("minimnist/labels.txt", colClasses = 'integer'))
 
 # Normalizing the RGB codes by dividing it to the max RGB value.
 # images_normalized <- images/256
+ 
 
 images_2 <- images[which(labels == 2), ]
-cov(images_2)[500:700,500:700]
+labels_2 <- labels[which(labels == 2)]
+images_2 <- images_2/255.0
+#cov(images_2)[500:700,500:700]
 
 showDigit <- function(line) {
   p <- sqrt(length(line))
@@ -32,14 +35,7 @@ layout(matrix(1:16, ncol = 4))
 par(mai = c(0, 0, 0, 0))
 for (j in sample(nrow(images), 16)) showDigit(images[j, ])
 
-df <- data.frame(images, labels)
 
-trainIndex  <- createDataPartition(df$labels, p = .7, 
-                                   list = FALSE, 
-                                   times = 1)
-
-df_train <- df[trainIndex, ]
-df_test <- df[-trainIndex, ]
 
 
 #c = lapply(b,image_array_resize, height = 100, width = 100) #resize
@@ -51,28 +47,40 @@ result.models <- data.frame(matrix(ncol = 5, nrow = 0))
 x <- c("Model", "Accuracy", "Precision", "Recall", "F1-score")
 colnames(result.models) <- x
 
-fitControl <- trainControl(method = "none")
-result.models$Model
-y_test <- as.factor(df_test$labels)
-models <- c("rf", "svmLinear", "knn")
+# fitControl <- trainControl(method = "none")
+# result.models$Model
+# y_test <- as.factor(df_test$labels)
+# models <- c("rf", "svmLinear", "knn")
+# 
+# for (model in models){
+#   print(model)
+#   result <- train(as.factor(labels) ~ ., df_train, method = model , trControl = fitControl)
+#   y_pred <- predict(result ,newdata=df_test)
+# 
+#   mat <- confusionMatrix(data=y_pred,reference=y_test)
+#   
+#   
+#   accuracy <- mat$overall["Accuracy"]
+#   precision <- mean(mat[["byClass"]][ , "Precision"])
+#   recall <- mean(mat[["byClass"]][ , "Recall"])
+#   f1 <- mean(mat[["byClass"]][ , "F1"])
+#   
+#   
+#   result.models[nrow(result.models) + 1,] = c(model, accuracy, precision, recall, f1) 
+#   
+# }
+library("FactoMineR")
+pca_2 <- PCA(images_2, scale.unit = TRUE, ncp = 40, graph = FALSE)$ind$coord
 
-for (model in models){
-  print(model)
-  result <- train(as.factor(labels) ~ ., df_train, method = model , trControl = fitControl)
-  y_pred <- predict(result ,newdata=df_test)
+df <- data.frame(pca_2, labels_2)
 
-  mat <- confusionMatrix(data=y_pred,reference=y_test)
-  
-  
-  accuracy <- mat$overall["Accuracy"]
-  precision <- mean(mat[["byClass"]][ , "Precision"])
-  recall <- mean(mat[["byClass"]][ , "Recall"])
-  f1 <- mean(mat[["byClass"]][ , "F1"])
-  
-  
-  result.models[nrow(result.models) + 1,] = c(model, accuracy, precision, recall, f1) 
-  
-}
+trainIndex  <- createDataPartition(df$labels, p = .7, 
+                                   list = FALSE, 
+                                   times = 1)
+
+df_train <- df[trainIndex, ]
+df_test <- df[-trainIndex, ]
+
 epislon <- 10^-6
 
 X_train <- df_train[,-ncol(df_train)]
@@ -82,6 +90,9 @@ y_test <- df_test$labels
 
 number_clusters <- 1:30
 n_interaction <- 40
+
+res <- main(X_train, 5, epislon, "random") 
+
 results <- MixtureMixture.train(X_train, y_train, number_clusters, n_interaction, epislon)
 print(results)
 
