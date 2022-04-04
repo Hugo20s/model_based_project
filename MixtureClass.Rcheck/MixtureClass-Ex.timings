@@ -1,0 +1,4 @@
+name	user	system	elapsed
+EM_algo	0.10	0.02	0.11	
+MixtureMixture.predict	31.41	 0.06	32.89	
+MixtureMixture.train	32.56	 0.09	33.47	

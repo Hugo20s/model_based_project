@@ -1,0 +1,119 @@
+pkgname <- "MixtureClass"
+source(file.path(R.home("share"), "R", "examples-header.R"))
+options(warn = 1)
+options(pager = "console")
+base::assign(".ExTimings", "MixtureClass-Ex.timings", pos = 'CheckExEnv')
+base::cat("name\tuser\tsystem\telapsed\n", file=base::get(".ExTimings", pos = 'CheckExEnv'))
+base::assign(".format_ptime",
+function(x) {
+  if(!is.na(x[4L])) x[1L] <- x[1L] + x[4L]
+  if(!is.na(x[5L])) x[2L] <- x[2L] + x[5L]
+  options(OutDec = '.')
+  format(x[1L:3L], digits = 7L)
+},
+pos = 'CheckExEnv')
+
+### * </HEADER>
+library('MixtureClass')
+
+base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
+base::assign(".old_wd", base::getwd(), pos = 'CheckExEnv')
+cleanEx()
+nameEx("EM_algo")
+### * EM_algo
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: EM_algo
+### Title: EM_algo: Compute the EM algorithm in a dataset
+### Aliases: EM_algo
+
+### ** Examples
+
+ K <- 5
+split <- sample(1:150, 100)
+y <- iris[-split, 5]
+data <- iris[-split, -5]
+epsilon <- 10^-6
+data <- as.matrix(data)
+
+res <- EM_algo(data, K, epsilon, "random")
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("EM_algo", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("MixtureMixture.predict")
+### * MixtureMixture.predict
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: MixtureMixture.predict
+### Title: MixtureMixture_predict
+### Aliases: MixtureMixture.predict
+
+### ** Examples
+
+rand<- sample(1:150, 150)
+X_train <- iris[rand[1:100], -5]
+y_train <- iris[rand[1:100], 5]
+y_train <- as.numeric(factor(y_train))
+X_test <- iris[rand[101:150], -5]
+y_test <- iris[rand[101:150], 5]
+y_test <- as.numeric(factor(y_test))
+epislon <- 10^-6
+number_clusters <- 1:3
+n_interaction <- 50
+results <- MixtureMixture.train (X_train, y_train, number_clusters, n_interaction, epislon)
+n_classes <- length(unique(y_train))
+y_pred <- MixtureMixture.predict(X_test, n_classes, results$map_cluster_class, results$best_models)
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("MixtureMixture.predict", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("MixtureMixture.train")
+### * MixtureMixture.train
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: MixtureMixture.train
+### Title: MixtureMixture_train
+### Aliases: MixtureMixture.train
+
+### ** Examples
+
+rand<- sample(1:150, 150)
+X_train <- iris[rand[1:100], -5]
+y_train <- iris[rand[1:100], 5]
+y_train <- as.numeric(factor(y_train))
+X_test <- iris[rand[101:150], -5]
+y_test <- iris[rand[101:150], 5]
+y_test <- as.numeric(factor(y_test))
+epislon <- 10^-6
+number_clusters <- 1:3
+n_interaction <- 50
+results <- MixtureMixture.train (X_train, y_train, number_clusters, n_interaction, epislon)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("MixtureMixture.train", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+### * <FOOTER>
+###
+cleanEx()
+options(digits = 7L)
+base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
+grDevices::dev.off()
+###
+### Local variables: ***
+### mode: outline-minor ***
+### outline-regexp: "\\(> \\)?### [*]+" ***
+### End: ***
+quit('no')

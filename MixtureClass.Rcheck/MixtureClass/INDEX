@@ -1,0 +1,4 @@
+EM_algo                 EM_algo: Compute the EM algorithm in a dataset
+MixtureMixture.predict
+                        MixtureMixture_predict
+MixtureMixture.train    MixtureMixture_train
